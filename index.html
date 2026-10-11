@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>잠깐</title>
+<meta name="description" content="충동이 올라올 때 잠깐 미루고, 대신 할 일을 하고, 미루기에 성공한 횟수를 기록하는 앱">
+<meta name="theme-color" content="#F6F4EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#151715" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root {
+    --bg: #F6F4EF;
+    --card: #FFFFFF;
+    --text: #1F1F1F;
+    --sub: #6B6B6B;
+    --line: #E4E0D6;
+    --accent: #2F6F5E;
+    --on-accent: #FFFFFF;
+    --accent-soft: #DCEBE5;
+    --chip: #ECE8DF;
+    --bar: #2F6F5E;
+    --bar-empty: #E4E0D6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151715;
+      --card: #1F221F;
+      --text: #ECEDEA;
+      --sub: #A3A7A1;
+      --line: #2E322E;
+      --accent: #6FBFA5;
+      --on-accent: #0F1A16;
+      --accent-soft: #23362F;
+      --chip: #2A2E2A;
+      --bar: #6FBFA5;
+      --bar-empty: #2E322E;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  h1, h2, h3, p { margin: 0; }
+
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .top h1 { font-size: 26px; letter-spacing: -0.02em; }
+  .top nav { display: flex; gap: 4px; }
+  .top nav button { padding: 8px 12px; border-radius: 10px; color: var(--sub); font-size: 15px; }
+  .top nav button:active { background: var(--chip); }
+  .back { padding: 8px 4px; color: var(--sub); font-size: 15px; }
+
+  .card { background: var(--card); border-radius: 20px; padding: 20px; }
+  .stack > * + * { margin-top: 12px; }
+
+  .today { text-align: center; padding: 28px 20px; }
+  .today .label { color: var(--sub); font-size: 15px; }
+  .today .big { font-size: 64px; font-weight: 800; line-height: 1.1; color: var(--accent); }
+  .today .big span { font-size: 22px; font-weight: 600; margin-left: 4px; color: var(--text); }
+  .today .hint { color: var(--sub); font-size: 13px; margin-top: 6px; }
+
+  .btn {
+    display: block; width: 100%; padding: 16px; border-radius: 16px;
+    font-size: 17px; font-weight: 700; text-align: center;
+  }
+  .btn.primary { background: var(--accent); color: var(--on-accent); }
+  .btn.secondary { background: var(--chip); }
+  .btn.ghost { color: var(--sub); font-weight: 500; font-size: 15px; padding: 12px; }
+  .btn.huge { padding: 26px 16px; font-size: 21px; border-radius: 22px; }
+  .btn:active { transform: scale(0.98); }
+
+  .section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+  .muted { color: var(--sub); font-size: 14px; }
+
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 96px; }
+  .bars .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bars .bar { width: 100%; max-width: 28px; border-radius: 6px; background: var(--bar); min-height: 4px; }
+  .bars .bar.zero { background: var(--bar-empty); }
+  .bars .n { font-size: 12px; color: var(--sub); }
+  .bars .d { font-size: 12px; color: var(--sub); }
+  .bars .col.today .d { color: var(--text); font-weight: 700; }
+
+  .center { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .eyebrow { color: var(--accent); font-weight: 700; font-size: 15px; text-align: center; }
+  .headline { font-size: 26px; font-weight: 800; text-align: center; letter-spacing: -0.02em; margin-top: 6px; }
+  .sub { color: var(--sub); text-align: center; margin-top: 8px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 28px; }
+  .chip { background: var(--card); border-radius: 16px; padding: 20px 12px; font-size: 18px; font-weight: 700; }
+  .chip:active { background: var(--accent-soft); }
+
+  .ring { position: relative; width: 200px; height: 200px; margin: 24px auto 8px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 10; }
+  .ring .track { stroke: var(--line); }
+  .ring .prog { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .ring .clock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 44px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .alts { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .alt { width: 100%; text-align: left; background: var(--card); border-radius: 14px; padding: 15px 16px; font-size: 17px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border: 2px solid transparent; }
+  .alt.on { border-color: var(--accent); background: var(--accent-soft); }
+  .alt .check { color: var(--accent); font-weight: 800; }
+
+  .emoji { font-size: 64px; text-align: center; }
+
+  .day-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .day-row:first-child { border-top: 0; }
+  .day-row .s { color: var(--accent); font-weight: 700; }
+  .day-row .g { color: var(--sub); font-size: 13px; margin-left: 8px; }
+
+  .seg { display: flex; gap: 8px; }
+  .seg button { flex: 1; padding: 12px 0; border-radius: 12px; background: var(--chip); font-weight: 700; }
+  .seg button.on { background: var(--accent); color: var(--on-accent); }
+
+  .edit-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-size: 16px; }
+  .edit-row:first-child { border-top: 0; }
+  .edit-row button { color: var(--sub); padding: 4px 10px; font-size: 20px; line-height: 1; }
+  .add { display: flex; gap: 8px; margin-top: 12px; }
+  .add input {
+    flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text);
+  }
+  .add button { padding: 0 18px; border-radius: 12px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
+  .danger { color: #C0533A; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+(() => {
+  const KEY = 'jamkkan.v1';
+  const URGES = ['쇼츠', 'SNS', '과자', '웹툰', '인터넷', '기타'];
+  const DELAYS = [5, 10, 15, 30];
+  const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+  const DEFAULTS = {
+    delayMin: 10,
+    alternatives: ['스쿼트하기', '산책하기', '심호흡하기', '책보기'],
+    active: null, // { urge, startedAt, endAt, rounds, alt }
+    log: []       // { t, day, urge, result: 'success' | 'gave', rounds, alt }
+  };
+
+  const app = document.getElementById('app');
+  let state = load();
+  let view = state.active ? (Date.now() >= state.active.endAt ? 'check' : 'timer') : 'home';
+  let ticker = null;
+
+  // ---------- 저장 ----------
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) return Object.assign(JSON.parse(JSON.stringify(DEFAULTS)), JSON.parse(raw));
+    } catch (e) {}
+    return JSON.parse(JSON.stringify(DEFAULTS));
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  // ---------- 날짜 ----------
+  function dayKey(d = new Date()) {
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+  function lastDays(n) {
+    const out = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      out.push(d);
+    }
+    return out;
+  }
+  function countFor(key) {
+    let success = 0, gave = 0;
+    for (const e of state.log) {
+      if (e.day !== key) continue;
+      if (e.result === 'success') success++; else gave++;
+    }
+    return { success, gave };
+  }
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const mmss = ms => {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  // ---------- 화면 ----------
+  function barsHtml(days, withLabels) {
+    const data = days.map(d => ({ d, n: countFor(dayKey(d)).success }));
+    const max = Math.max(1, ...data.map(x => x.n));
+    const todayKey = dayKey();
+    return `<div class="bars">${data.map(({ d, n }) => `
+      <div class="col ${dayKey(d) === todayKey ? 'today' : ''}">
+        <span class="n">${n || ''}</span>
+        <div class="bar ${n ? '' : 'zero'}" style="height:${n ? Math.max(8, (n / max) * 64) : 4}px"></div>
+        <span class="d">${withLabels ? WEEKDAYS[d.getDay()] : d.getDate()}</span>
+      </div>`).join('')}</div>`;
+  }
+
+  const views = {
+    home() {
+      const { success } = countFor(dayKey());
+      const a = state.active;
+      return `
+        <header class="top">
+          <h1>잠깐</h1>
+          <nav><button data-go="history">기록</button><button data-go="settings">설정</button></nav>
+        </header>
+        <div class="stack">
+          <section class="card today">
+            <p class="label">오늘 미루기 성공</p>
+            <p class="big">${success}<span>번</span></p>
+            <p class="hint">${success ? '충동은 기다리면 지나가요' : '충동이 올라오면 아래 버튼을 눌러요'}</p>
+          </section>
+          ${a ? `
+            <button class="btn primary huge" data-go="${Date.now() >= a.endAt ? 'check' : 'timer'}">
+              ${esc(a.urge)} 미루는 중 · <span id="mini">${mmss(a.endAt - Date.now())}</span>
+            </button>` : `
+            <button class="btn primary huge" data-go="pick">충동이 올라왔어</button>`}
+          <section class="card">
+            <p class="section-title">최근 7일</p>
+            ${barsHtml(lastDays(7), true)}
+          </section>
+        </div>`;
+    },
+
+    pick() {
+      return `
+        <button class="back" data-go="home">← 취소</button>
+        <div class="center">
+          <h2 class="headline">뭐가 당겨?</h2>
+          <p class="sub">고르면 ${state.delayMin}분 타이머가 시작돼요</p>
+          <div class="grid">
+            ${URGES.map(u => `<button class="chip" data-urge="${esc(u)}">${esc(u)}</button>`).join('')}
+          </div>
+        </div>`;
+    },
+
+    timer() {
+      const a = state.active;
+      const total = a.endAt - a.startedAt;
+      return `
+        <button class="back" data-go="home">← 처음으로</button>
+        <p class="eyebrow">${esc(a.urge)}</p>
+        <h2 class="headline">${a.rounds > 1 ? `한 번 더, ${state.delayMin}분` : `${Math.round(total / 60000)}분만 미뤄 보자`}</h2>
+        <div class="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="track" cx="60" cy="60" r="52"></circle>
+            <circle class="prog" id="prog" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="clock" id="clock">${mmss(a.endAt - Date.now())}</div>
+        </div>
+        <p class="section-title" style="text-align:center;margin-top:12px">그동안 이거 하나 해 볼까?</p>
+        <ul class="alts">
+          ${state.alternatives.map((t, i) => `
+            <li><button class="alt ${a.alt === t ? 'on' : ''}" data-alt="${i}">
+              <span>${esc(t)}</span><span class="check">${a.alt === t ? '✓' : ''}</span>
+            </button></li>`).join('')}
+        </ul>
+        <div class="stack" style="margin-top:20px">
+          <button class="btn primary" data-act="success">충동이 사라졌어</button>
+          <button class="btn ghost" data-act="gave">그냥 할래</button>
+        </div>`;
+    },
+
+    check() {
+      const a = state.active;
+      const mins = Math.round((a.endAt - a.startedAt) / 60000);
+      return `
+        <div class="center">
+          <p class="emoji">⏰</p>
+          <h2 class="headline">${mins}분 지났어</h2>
+          <p class="sub">아직도 ${esc(a.urge)} 하고 싶어?</p>
+          <div class="stack" style="margin-top:32px">
+            <button class="btn primary" data-act="success">아니, 괜찮아졌어</button>
+            <button class="btn secondary" data-act="more">아직… ${state.delayMin}분 더 미룰래</button>
+            <button class="btn ghost" data-act="gave">응, 할래</button>
+          </div>
+        </div>`;
+    },
+
+    done() {
+      const { success } = countFor(dayKey());
+      return `
+        <div class="center">
+          <p class="emoji">🙌</p>
+          <h2 class="headline">오늘 ${success}번째 성공!</h2>
+          <p class="sub">충동은 기다리면 지나가요.<br>방금 그걸 직접 확인했어요.</p>
+          <div style="margin-top:32px"><button class="btn primary" data-go="home">처음으로</button></div>
+        </div>`;
+    },
+
+    gave() {
+      return `
+        <div class="center">
+          <p class="emoji">🌱</p>
+          <h2 class="headline">괜찮아요</h2>
+          <p class="sub">멈춰서 미뤄 보려 한 것도 연습이에요.<br>다음엔 조금만 더 버텨 봐요.</p>
+          <div style="margin-top:32px"><button class="btn primary" data-go="home">처음으로</button></div>
+        </div>`;
+    },
+
+    history() {
+      const byDay = new Map();
+      for (const e of state.log) {
+        const c = byDay.get(e.day) || { success: 0, gave: 0 };
+        if (e.result === 'success') c.success++; else c.gave++;
+        byDay.set(e.day, c);
+      }
+      const days = [...byDay.keys()].sort().reverse().slice(0, 60);
+
+      const weekAgo = Date.now() - 7 * 86400000;
+      const urgeCount = {}, altCount = {};
+      for (const e of state.log) {
+        if (e.t < weekAgo) continue;
+        urgeCount[e.urge] = (urgeCount[e.urge] || 0) + 1;
+        if (e.result === 'success' && e.alt) altCount[e.alt] = (altCount[e.alt] || 0) + 1;
+      }
+      const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3)
+        .map(([k, v]) => `${esc(k)} ${v}`).join(' · ');
+      const total = state.log.filter(e => e.result === 'success').length;
+
+      const label = key => {
+        const [y, m, d] = key.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        return `${m}월 ${d}일 (${WEEKDAYS[date.getDay()]})`;
+      };
+
+      return `
+        <header class="top"><button class="back" data-go="home">← 처음으로</button><h1 style="font-size:20px">기록</h1></header>
+        <div class="stack">
+          <section class="card">
+            <p class="section-title">최근 14일 성공</p>
+            ${barsHtml(lastDays(14), false)}
+            <p class="muted" style="margin-top:14px">지금까지 미루기 성공 <b style="color:var(--accent)">${total}번</b></p>
+          </section>
+          ${top(urgeCount) || top(altCount) ? `
+          <section class="card">
+            <p class="section-title">최근 7일</p>
+            ${top(urgeCount) ? `<p class="muted">자주 당긴 것 &nbsp;<b style="color:var(--text)">${top(urgeCount)}</b></p>` : ''}
+            ${top(altCount) ? `<p class="muted" style="margin-top:6px">성공할 때 한 일 &nbsp;<b style="color:var(--text)">${top(altCount)}</b></p>` : ''}
+          </section>` : ''}
+          <section class="card">
+            <p class="section-title">날짜별</p>
+            ${days.length ? days.map(k => {
+              const c = byDay.get(k);
+              return `<div class="day-row"><span>${label(k)}</span>
+                <span><span class="s">성공 ${c.success}</span>${c.gave ? `<span class="g">넘어감 ${c.gave}</span>` : ''}</span></div>`;
+            }).join('') : '<p class="muted">아직 기록이 없어요.</p>'}
+          </section>
+        </div>`;
+    },
+
+    settings() {
+      return `
+        <header class="top"><button class="back" data-go="home">← 처음으로</button><h1 style="font-size:20px">설정</h1></header>
+        <div class="stack">
+          <section class="card">
+            <p class="section-title">미루는 시간</p>
+            <div class="seg">
+              ${DELAYS.map(m => `<button class="${state.delayMin === m ? 'on' : ''}" data-delay="${m}">${m}분</button>`).join('')}
+            </div>
+          </section>
+          <section class="card">
+            <p class="section-title">대신 할 행동</p>
+            <div>
+              ${state.alternatives.map((t, i) => `
+                <div class="edit-row"><span>${esc(t)}</span><button data-del="${i}" aria-label="${esc(t)} 삭제">×</button></div>`).join('')}
+            </div>
+            <form class="add" id="addForm">
+              <input id="newAlt" maxlength="30" placeholder="예: 물 한 잔 마시기" autocomplete="off">
+              <button type="submit">추가</button>
+            </form>
+          </section>
+          <section class="card">
+            <button class="btn ghost danger" data-act="reset">기록 모두 지우기</button>
+          </section>
+        </div>`;
+    }
+  };
+
+  // ---------- 그리기 ----------
+  function go(next) {
+    view = next;
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function render() {
+    if ((view === 'timer' || view === 'check') && !state.active) view = 'home';
+    if (view === 'timer' && Date.now() >= state.active.endAt) view = 'check';
+    app.innerHTML = views[view]();
+    clearInterval(ticker);
+    const running = state.active && Date.now() < state.active.endAt;
+    if (running && (view === 'timer' || view === 'home')) {
+      tick();
+      ticker = setInterval(tick, 1000);
+    }
+  }
+
+  function tick() {
+    const a = state.active;
+    if (!a) return;
+    const left = a.endAt - Date.now();
+    if (left <= 0) {
+      clearInterval(ticker);
+      if (view === 'timer') {
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        go('check');
+      } else {
+        render();
+      }
+      return;
+    }
+    const clock = document.getElementById('clock');
+    if (clock) clock.textContent = mmss(left);
+    const mini = document.getElementById('mini');
+    if (mini) mini.textContent = mmss(left);
+    const prog = document.getElementById('prog');
+    if (prog) {
+      const done = 1 - left / (a.endAt - a.startedAt);
+      prog.setAttribute('stroke-dashoffset', String(326.73 * done));
+    }
+  }
+
+  // ---------- 동작 ----------
+  function startUrge(urge) {
+    const now = Date.now();
+    state.active = { urge, startedAt: now, endAt: now + state.delayMin * 60000, rounds: 1, alt: null };
+    save();
+    go('timer');
+  }
+
+  function finish(result) {
+    const a = state.active;
+    if (!a) return go('home');
+    state.log.push({ t: Date.now(), day: dayKey(), urge: a.urge, result, rounds: a.rounds, alt: a.alt });
+    state.active = null;
+    save();
+    go(result === 'success' ? 'done' : 'gave');
+  }
+
+  function delayMore() {
+    const a = state.active;
+    const now = Date.now();
+    a.startedAt = now;
+    a.endAt = now + state.delayMin * 60000;
+    a.rounds += 1;
+    save();
+    go('timer');
+  }
+
+  app.addEventListener('click', e => {
+    const el = e.target.closest('button');
+    if (!el) return;
+    const d = el.dataset;
+    if (d.go) return go(d.go);
+    if (d.urge) return startUrge(d.urge);
+    if (d.alt !== undefined && state.active) {
+      const t = state.alternatives[Number(d.alt)];
+      state.active.alt = state.active.alt === t ? null : t;
+      save();
+      return render();
+    }
+    if (d.delay) {
+      state.delayMin = Number(d.delay);
+      save();
+      return render();
+    }
+    if (d.del !== undefined) {
+      state.alternatives.splice(Number(d.del), 1);
+      save();
+      return render();
+    }
+    switch (d.act) {
+      case 'success': return finish('success');
+      case 'gave': return finish('gave');
+      case 'more': return delayMore();
+      case 'reset':
+        if (confirm('기록을 모두 지울까요? 되돌릴 수 없어요.')) {
+          state.log = [];
+          state.active = null;
+          save();
+          render();
+        }
+        return;
+    }
+  });
+
+  app.addEventListener('submit', e => {
+    if (e.target.id !== 'addForm') return;
+    e.preventDefault();
+    const input = document.getElementById('newAlt');
+    const v = input.value.trim();
+    if (v && !state.alternatives.includes(v)) {
+      state.alternatives.push(v);
+      save();
+    }
+    render();
+    const again = document.getElementById('newAlt');
+    if (again) again.focus();
+  });
+
+  // 다른 앱에 갔다 돌아왔을 때 타이머가 끝났으면 바로 확인 화면으로
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') render();
+  });
+
+  render();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>
