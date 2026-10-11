@@ -183,7 +183,37 @@
   .entry .a { grid-column: 2 / 4; color: var(--ink-2); font-size: 13px; }
   .entry .a::before { content: '→ '; color: var(--sub); }
 
+  /* 달력 */
+  .unit { font-family: var(--serif); font-size: 16px; color: var(--ink-2); margin-left: 6px; }
+  .moss { color: var(--moss); font-weight: 400; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 0 12px; }
+  .cal-head .m { font-family: var(--serif); font-size: 18px; }
+  .cal-head button { width: 40px; height: 40px; border-radius: 50%; font-size: 24px; line-height: 1; color: var(--ink-2); }
+  .cal-head button:active { background: var(--moss-soft); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; text-align: center; }
+  .cal-w { font-size: 11px; color: var(--sub); padding-bottom: 6px; }
+  .cal-cell { aspect-ratio: 1 / 1.12; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 14px; margin: 0 2px; transition: background .2s; }
+  .cal-cell .dn { font-family: var(--num); font-size: 18px; line-height: 1; font-variant-numeric: lining-nums; }
+  .cal-cell .cn { font-family: var(--num); font-size: 13px; line-height: 1; min-height: 13px; color: var(--sub); font-variant-numeric: lining-nums; }
+  .cal-cell.win .cn { color: var(--moss); font-weight: 500; }
+  .cal-cell.win .dn { position: relative; }
+  .cal-cell.win { background: var(--moss-soft); }
+  .cal-cell.today .dn { color: var(--seal); }
+  .cal-cell.future { opacity: .35; }
+  .cal-cell.sel { background: var(--ink); color: var(--on-ink); }
+  .cal-cell.sel .cn, .cal-cell.sel .dn { color: var(--on-ink); }
+  .day-detail { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .day-detail h3 { font-family: var(--serif); font-weight: 400; font-size: 20px; }
+  .acts { margin-top: 16px; }
+  .act-row { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--line); }
+  .act-row:last-child { border-bottom: 1px solid var(--line); }
+  .act-row .nm { font-size: 16px; }
+  .act-row .ct { font-family: var(--num); font-size: 24px; color: var(--moss); line-height: 1; }
+  .act-row .ct small { font-family: var(--sans); font-size: 12px; margin-left: 2px; color: var(--sub); }
+  .act-row .tm { grid-column: 1 / 3; font-size: 12px; color: var(--sub); margin-top: 4px; font-variant-numeric: tabular-nums; }
+
   /* 설치 */
+  .install-btn { margin-top: 26px; }
   .install-link { display: block; margin: 28px auto 0; padding: 9px 18px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--ink-2); letter-spacing: .04em; }
   .steps { list-style: none; margin: 0; padding: 0; counter-reset: s; }
   .steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; padding: 16px 0; border-top: 1px solid var(--line); font-size: 15px; }
@@ -307,9 +337,14 @@
     }
     return out;
   }
-  function letGoOn(key) {
-    return state.log.filter(e => e.day === key && e.result === 'success').length;
+  // 대체 활동을 하나라도 하고 욕구가 사라졌으면 '대체 활동 성공'
+  const isAltWin = e => e.result === 'success' && altsOf(e).length > 0;
+  const resultLabel = e => e.result !== 'success' ? '따라감' : (altsOf(e).length ? '대체 활동 성공' : '흘려보냄');
+  function altWinsOn(key) {
+    return state.log.filter(e => e.day === key && isAltWin(e)).length;
   }
+  // 달력에서 보고 있는 달과 고른 날짜
+  let cal = { y: new Date().getFullYear(), m: new Date().getMonth(), sel: dayKey() };
   const hhmm = t => new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const mmss = ms => {
@@ -343,7 +378,7 @@
   }
 
   function sticks(days, weekdayLabels) {
-    const data = days.map(d => ({ d, n: letGoOn(dayKey(d)) }));
+    const data = days.map(d => ({ d, n: altWinsOn(dayKey(d)) }));
     const max = Math.max(1, ...data.map(x => x.n));
     const today = dayKey();
     return `<div class="sticks">${data.map(({ d, n }) => `
@@ -372,7 +407,7 @@
   const views = {
     home() {
       const a = state.active;
-      const n = letGoOn(dayKey());
+      const n = altWinsOn(dayKey());
       let circle;
       if (a) {
         const ended = Date.now() >= a.endAt;
@@ -391,11 +426,11 @@
           <p class="muted center" style="margin-top:22px">${a ? '원을 누르면 이어서 볼 수 있어요' : '욕구가 올라오면 원을 눌러요'}</p>
         </div>
         <div class="center" style="margin-bottom:26px">
-          <p class="eyebrow">오늘 흘려보낸 욕구</p>
+          <p class="eyebrow">오늘 대체 활동 성공</p>
           <div class="today-line" style="margin-top:8px"><span class="today-num">${n}</span></div>
         </div>
         ${sticks(lastDays(7), true)}
-        ${isStandalone() ? '' : '<button class="install-link" data-act="install">여백을 홈 화면에 두기</button>'}`;
+        ${isStandalone() ? '' : '<button class="btn line install-btn" data-act="install">설치하기</button>'}`;
     },
 
     install() {
@@ -505,16 +540,19 @@
     },
 
     done() {
-      const n = letGoOn(dayKey());
       const last = state.log[state.log.length - 1];
       const did = last ? altsOf(last) : [];
+      const n = altWinsOn(dayKey());
       return `
         <div class="grow" style="display:flex;flex-direction:column;justify-content:center">
-          ${enso(1, 190, '<span class="enso-say" style="font-size:18px">흘려보냄</span>', 'd')}
+          ${enso(1, 190, `<span class="enso-say" style="font-size:18px">${did.length ? '대체 활동<br>성공' : '흘려보냄'}</span>`, 'd')}
           <div class="center" style="margin-top:30px">
-            <h2 class="title">욕구가 지나갔어요</h2>
-            <p class="lead" style="margin-top:10px">오늘 ${n}번째예요.<br>욕구는 구름처럼 왔다가 가요.</p>
-            ${did.length ? `<p class="muted" style="margin-top:16px">대신 한 것 · ${did.map(esc).join(', ')}</p>` : ''}
+            ${did.length ? `
+              <p class="eyebrow">${did.map(esc).join(' · ')}</p>
+              <h2 class="title" style="margin-top:8px">대체 활동 성공</h2>
+              <p class="lead" style="margin-top:10px">오늘 ${n}번째 성공이에요.<br>도파민 대신 몸을 움직였어요.</p>` : `
+              <h2 class="title">욕구가 지나갔어요</h2>
+              <p class="lead" style="margin-top:10px">욕구는 구름처럼 왔다가 가요.<br>다음엔 대체 활동도 하나 골라 봐요.</p>`}
           </div>
           <div style="margin-top:40px"><button class="btn line" data-go="home">처음으로</button></div>
         </div>`;
@@ -533,75 +571,96 @@
     },
 
     history() {
-      // 기록은 지우지 않는다. 전부 월별로 묶고 이번 달만 펼쳐 둔다
+      // 기록은 지우지 않는다. 달력으로 어느 달이든 돌아가 볼 수 있다
       const byDay = new Map();
       for (const e of state.log) {
         if (!byDay.has(e.day)) byDay.set(e.day, []);
         byDay.get(e.day).push(e);
       }
-      const months = new Map();
-      for (const k of [...byDay.keys()].sort().reverse()) {
-        const mk = k.slice(0, 7);
-        if (!months.has(mk)) months.set(mk, []);
-        months.get(mk).push(k);
-      }
-      const count = (list, r) => list.filter(e => e.result === r).length;
+      const today = dayKey();
+      const p2 = n => String(n).padStart(2, '0');
+      const monthKey = `${cal.y}-${p2(cal.m + 1)}`;
+      const monthList = state.log.filter(e => e.day.startsWith(monthKey));
 
-      const weekAgo = Date.now() - 7 * 86400000;
-      const urgeCount = {}, altCount = {};
-      for (const e of state.log) {
-        if (e.t < weekAgo) continue;
-        urgeCount[sayOf(e.urge)] = (urgeCount[sayOf(e.urge)] || 0) + 1;
-        for (const t of altsOf(e)) altCount[t] = (altCount[t] || 0) + 1;
-      }
-      const top = obj => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, 3)
-        .map(([k, v]) => `${esc(k)} ${v}`).join(' · ');
-      const total = count(state.log, 'success');
-      const first = state.log.length ? state.log.reduce((m, e) => (e.t < m ? e.t : m), state.log[0].t) : null;
-
-      const dayLabel = key => {
-        const [y, m, d] = key.split('-').map(Number);
-        return `${m}월 ${d}일 ${WEEKDAYS[new Date(y, m - 1, d).getDay()]}요일`;
+      // 대체 활동별 횟수와 시각
+      const byActivity = list => {
+        const map = new Map();
+        for (const e of list.filter(isAltWin).sort((a, b) => a.t - b.t)) {
+          for (const t of altsOf(e)) {
+            if (!map.has(t)) map.set(t, []);
+            map.get(t).push(e.t);
+          }
+        }
+        return [...map.entries()].sort((a, b) => b[1].length - a[1].length);
       };
+
+      const startDow = new Date(cal.y, cal.m, 1).getDay();
+      const daysIn = new Date(cal.y, cal.m + 1, 0).getDate();
+      const cells = [];
+      for (let i = 0; i < startDow; i++) cells.push('<span class="cal-cell empty"></span>');
+      for (let d = 1; d <= daysIn; d++) {
+        const key = `${monthKey}-${p2(d)}`;
+        const list = byDay.get(key) || [];
+        const wins = list.filter(isAltWin).length;
+        const cls = [key === cal.sel && 'sel', key === today && 'today', key > today && 'future', wins && 'win'].filter(Boolean).join(' ');
+        cells.push(`<button class="cal-cell ${cls}" data-day="${key}">
+          <span class="dn">${d}</span>
+          <span class="cn">${wins ? wins : (list.length ? '·' : '')}</span>
+        </button>`);
+      }
+
+      const total = state.log.filter(isAltWin).length;
+      const first = state.log.length ? state.log.reduce((m, e) => (e.t < m ? e.t : m), state.log[0].t) : null;
+      const monthWins = monthList.filter(isAltWin).length;
+      const monthActs = byActivity(monthList).slice(0, 3).map(([t, ts]) => `${esc(t)} ${ts.length}`).join(' · ');
+
+      const [sy, sm, sd] = cal.sel.split('-').map(Number);
+      const selLabel = `${sm}월 ${sd}일 ${WEEKDAYS[new Date(sy, sm - 1, sd).getDay()]}요일`;
+      const sel = (byDay.get(cal.sel) || []).slice().sort((a, b) => a.t - b.t);
+      const selWins = sel.filter(isAltWin).length;
+      const selLetGo = sel.filter(e => e.result === 'success' && !altsOf(e).length).length;
+      const selGave = sel.filter(e => e.result !== 'success').length;
 
       return `
         <button class="back" data-go="home">← 처음으로</button>
-        <div style="padding:36px 0 28px">
-          <p class="eyebrow">지금까지 흘려보낸 욕구</p>
-          <p class="today-num" style="font-size:48px;margin-top:10px">${total}</p>
-          ${first ? `<p class="muted" style="margin-top:8px">${new Date(first).toLocaleDateString('ko-KR')}부터의 기록</p>` : ''}
+        <div style="padding:32px 0 26px">
+          <p class="eyebrow">지금까지 대체 활동 성공</p>
+          <p style="margin-top:10px"><span class="today-num" style="font-size:52px">${total}</span><span class="unit">회</span></p>
+          ${first ? `<p class="muted" style="margin-top:6px">${new Date(first).toLocaleDateString('ko-KR')}부터의 기록</p>` : ''}
         </div>
-        <p class="eyebrow" style="margin-bottom:12px">최근 14일</p>
-        ${sticks(lastDays(14), false)}
-        ${top(urgeCount) || top(altCount) ? `
-          <div style="margin-top:30px" class="stack">
-            ${top(urgeCount) ? `<p class="muted">이번 주 자주 들린 말 &nbsp;<span style="color:var(--ink)">${top(urgeCount)}</span></p>` : ''}
-            ${top(altCount) ? `<p class="muted">대신 한 것 &nbsp;<span style="color:var(--ink)">${top(altCount)}</span></p>` : ''}
-          </div>` : ''}
-        <div style="margin-top:34px">
-          ${months.size ? [...months.entries()].map(([mk, days], i) => {
-            const [y, mo] = mk.split('-').map(Number);
-            const all = days.flatMap(k => byDay.get(k));
-            return `<details class="month" ${i === 0 ? 'open' : ''}>
-              <summary><span class="m">${y}년 ${mo}월</span>
-                <span class="tally">흘려보냄 <b>${count(all, 'success')}</b>${count(all, 'gave') ? ` · 따라감 ${count(all, 'gave')}` : ''}</span></summary>
-              ${days.map(k => {
-                const list = byDay.get(k).slice().sort((a, b) => b.t - a.t);
-                return `<div class="day">
-                  <div class="day-head"><span>${dayLabel(k)}</span>
-                    <span class="tally">흘려보냄 <b>${count(list, 'success')}</b>${count(list, 'gave') ? ` · 따라감 ${count(list, 'gave')}` : ''}</span></div>
-                  ${list.map(e => `<div class="entry">
-                    <span class="t">${hhmm(e.t)}</span>
-                    <span class="w">“${esc(sayOf(e.urge))}”</span>
-                    <span class="r ${e.result === 'success' ? '' : 'follow'}">${e.result === 'success' ? '흘려보냄' : '따라감'}</span>
-                    ${altsOf(e).length ? `<span class="a">${altsOf(e).map(esc).join(', ')}</span>` : ''}
+
+        <div class="cal-head">
+          <button data-cal="-1" aria-label="이전 달">‹</button>
+          <span class="m">${cal.y}년 ${cal.m + 1}월</span>
+          <button data-cal="1" aria-label="다음 달">›</button>
+        </div>
+        <div class="cal-grid">
+          ${WEEKDAYS.map(w => `<span class="cal-w">${w}</span>`).join('')}
+          ${cells.join('')}
+        </div>
+        <p class="muted" style="margin-top:14px">이 달 대체 활동 성공 <b class="moss">${monthWins}회</b>${monthActs ? ` · ${monthActs}` : ''}</p>
+
+        <div class="day-detail">
+          <h3>${selLabel}</h3>
+          ${sel.length ? `
+            <p class="tally" style="margin-top:4px">대체 활동 성공 <b>${selWins}</b>${selLetGo ? ` · 흘려보냄 ${selLetGo}` : ''}${selGave ? ` · 따라감 ${selGave}` : ''}</p>
+            ${selWins ? `
+              <div class="acts">
+                ${byActivity(sel).map(([t, ts]) => `
+                  <div class="act-row">
+                    <span class="nm">${esc(t)}</span><span class="ct">${ts.length}<small>회</small></span>
+                    <span class="tm">${ts.map(hhmm).join(' · ')}</span>
                   </div>`).join('')}
-                </div>`;
-              }).join('')}
-            </details>`;
-          }).join('') : '<p class="muted center" style="padding:30px 0">아직 기록이 없어요.<br>첫 여백을 두어 보세요.</p>'}
+              </div>` : ''}
+            <p class="eyebrow" style="margin:24px 0 4px">이 날의 흐름</p>
+            ${sel.map(e => `<div class="entry">
+              <span class="t">${hhmm(e.t)}</span>
+              <span class="w">“${esc(sayOf(e.urge))}”</span>
+              <span class="r ${e.result === 'success' ? '' : 'follow'}">${resultLabel(e)}</span>
+              ${altsOf(e).length ? `<span class="a">${altsOf(e).map(esc).join(', ')}</span>` : ''}
+            </div>`).join('')}` : `<p class="muted" style="margin-top:6px">${cal.sel > today ? '아직 오지 않은 날이에요.' : '이 날은 기록이 없어요.'}</p>`}
         </div>
-        <p class="muted center" style="margin-top:28px">기록은 지워지지 않고 이 폰에 쌓여요.<br>폰을 바꾸기 전엔 설정에서 백업해 두세요.</p>`;
+        <p class="muted center" style="margin-top:32px">기록은 지워지지 않고 이 폰에 쌓여요.<br>폰을 바꾸기 전엔 설정에서 백업해 두세요.</p>`;
     },
 
     settings() {
@@ -645,6 +704,10 @@
 
   // ---------- 그리기 ----------
   function go(next) {
+    if (next === 'history' && view !== 'history') {
+      const now = new Date();
+      cal = { y: now.getFullYear(), m: now.getMonth(), sel: dayKey(now) };
+    }
     view = next;
     render();
     window.scrollTo(0, 0);
@@ -775,6 +838,13 @@
     const d = el.dataset;
     if (d.go) return go(d.go);
     if (d.urge) return startUrge(d.urge);
+    if (d.cal) {
+      const next = new Date(cal.y, cal.m + Number(d.cal), 1);
+      cal.y = next.getFullYear();
+      cal.m = next.getMonth();
+      return render();
+    }
+    if (d.day) { cal.sel = d.day; return render(); }
     if (d.alt !== undefined) return toggleAlt(d.alt);
     if (d.delay) { state.delayMin = Number(d.delay); save(); return render(); }
     if (d.del !== undefined) { state.alternatives.splice(Number(d.del), 1); save(); return render(); }

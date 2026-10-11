@@ -1,5 +1,5 @@
 // 오프라인에서도 열리도록 앱 파일을 캐시한다. 파일을 고치면 CACHE 이름의 숫자를 올린다.
-const CACHE = 'yeobaek-v4';
+const CACHE = 'yeobaek-v5';
 const ASSETS = [
   './',
   './index.html',
