@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Serif+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Song+Myung&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #F2EEE5;        /* 한지 */
@@ -25,8 +25,10 @@
     --moss-soft: #E2E7DA;
     --seal: #B0503A;      /* 낙관 */
     --on-ink: #F8F5EE;
-    --serif: "Noto Serif KR", "Nanum Myeongjo", serif;
-    --sans: "Noto Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --serif: "Gowun Batang", "Nanum Myeongjo", serif;
+    --sans: "Gowun Dodum", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --num: "Cormorant Garamond", "Gowun Batang", serif;
+    --brush: "Song Myung", "Gowun Batang", serif;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -47,7 +49,7 @@
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
   body {
     font-family: var(--sans);
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.7;
     letter-spacing: -0.005em;
     min-height: 100dvh;
@@ -70,7 +72,7 @@
   /* 머리 */
   .top { display: flex; align-items: center; justify-content: space-between; }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand h1 { font-family: var(--serif); font-weight: 500; font-size: 22px; letter-spacing: 0.08em; }
+  .brand h1 { font-family: var(--brush); font-weight: 400; font-size: 25px; letter-spacing: 0.06em; }
   .seal {
     width: 22px; height: 22px; background: var(--seal); color: #F8F5EE; border-radius: 3px;
     font-family: var(--serif); font-size: 9px; line-height: 1; font-weight: 600;
@@ -82,7 +84,7 @@
   .back { align-self: flex-start; padding: 4px 0; }
 
   .eyebrow { color: var(--sub); font-size: 12px; letter-spacing: 0.12em; }
-  .title { font-family: var(--serif); font-weight: 500; font-size: 26px; line-height: 1.45; letter-spacing: -0.01em; }
+  .title { font-family: var(--serif); font-weight: 400; font-size: 27px; line-height: 1.5; letter-spacing: -0.01em; }
   .lead { color: var(--ink-2); font-size: 15px; }
   .muted { color: var(--sub); font-size: 13px; }
   .center { text-align: center; }
@@ -99,8 +101,8 @@
   .enso-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
   .enso-btn { display: block; margin: 0 auto; border-radius: 50%; transition: transform .4s ease; }
   .enso-btn:active { transform: scale(0.97); }
-  .enso-say { font-family: var(--serif); font-size: 22px; line-height: 1.55; font-weight: 500; }
-  .enso-time { font-family: var(--serif); font-size: 46px; font-weight: 400; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+  .enso-say { font-family: var(--serif); font-size: 22px; line-height: 1.6; font-weight: 400; }
+  .enso-time { font-family: var(--num); font-size: 60px; font-weight: 300; line-height: 1; font-variant-numeric: lining-nums tabular-nums; letter-spacing: 0.01em; }
 
   /* 버튼 */
   .btn { display: block; width: 100%; padding: 17px 20px; border-radius: 999px; font-size: 15.5px; font-weight: 400; letter-spacing: 0.02em; text-align: center; transition: opacity .2s; }
@@ -113,12 +115,12 @@
 
   /* 오늘 */
   .today-line { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
-  .today-num { font-family: var(--serif); font-size: 40px; font-weight: 400; color: var(--moss); line-height: 1; }
+  .today-num { font-family: var(--num); font-size: 52px; font-weight: 300; font-variant-numeric: lining-nums; color: var(--moss); line-height: 1; }
 
   /* 먹선 막대 */
   .sticks { display: flex; align-items: flex-end; justify-content: space-between; height: 92px; padding: 0 2px; }
   .sticks .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; height: 100%; }
-  .sticks .n { font-size: 11px; color: var(--sub); font-family: var(--serif); }
+  .sticks .n { font-size: 14px; color: var(--sub); font-family: var(--num); font-variant-numeric: lining-nums; }
   .sticks .stick { width: 2px; border-radius: 2px; background: var(--ink); opacity: .75; }
   .sticks .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--line); }
   .sticks .d { font-size: 11px; color: var(--sub); }
@@ -152,7 +154,7 @@
   /* 설정 */
   .section { padding: 26px 0; border-top: 1px solid var(--line); }
   .section:first-of-type { border-top: 0; }
-  .section h3 { font-family: var(--serif); font-weight: 500; font-size: 16px; margin-bottom: 14px; }
+  .section h3 { font-family: var(--serif); font-weight: 400; font-size: 16px; margin-bottom: 14px; }
   .seg { display: flex; gap: 8px; }
   .seg button { flex: 1; padding: 11px 0; border-radius: 999px; border: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
   .seg button.on { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
