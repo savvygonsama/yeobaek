@@ -62,7 +62,7 @@
   .top nav { display: flex; gap: 4px; }
   .top nav button { padding: 8px 12px; border-radius: 10px; color: var(--sub); font-size: 15px; }
   .top nav button:active { background: var(--chip); }
-  .back { padding: 8px 4px; color: var(--sub); font-size: 15px; }
+  .back { align-self: flex-start; padding: 8px 4px; color: var(--sub); font-size: 15px; }
 
   .card { background: var(--card); border-radius: 20px; padding: 20px; }
   .stack > * + * { margin-top: 12px; }
@@ -92,7 +92,7 @@
   .bars .bar.zero { background: var(--bar-empty); }
   .bars .n { font-size: 12px; color: var(--sub); }
   .bars .d { font-size: 12px; color: var(--sub); }
-  .bars .col.today .d { color: var(--text); font-weight: 700; }
+  .bars .col.is-today .d { color: var(--text); font-weight: 700; }
 
   .center { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .eyebrow { color: var(--accent); font-weight: 700; font-size: 15px; text-align: center; }
@@ -150,7 +150,7 @@
   const DEFAULTS = {
     delayMin: 10,
     alternatives: ['스쿼트하기', '산책하기', '심호흡하기', '책보기'],
-    active: null, // { urge, startedAt, endAt, rounds, alt }
+    active: null, // { urge, firstAt, startedAt, endAt, rounds, alt }
     log: []       // { t, day, urge, result: 'success' | 'gave', rounds, alt }
   };
 
@@ -207,7 +207,7 @@
     const max = Math.max(1, ...data.map(x => x.n));
     const todayKey = dayKey();
     return `<div class="bars">${data.map(({ d, n }) => `
-      <div class="col ${dayKey(d) === todayKey ? 'today' : ''}">
+      <div class="col ${dayKey(d) === todayKey ? 'is-today' : ''}">
         <span class="n">${n || ''}</span>
         <div class="bar ${n ? '' : 'zero'}" style="height:${n ? Math.max(8, (n / max) * 64) : 4}px"></div>
         <span class="d">${withLabels ? WEEKDAYS[d.getDay()] : d.getDate()}</span>
@@ -282,7 +282,7 @@
 
     check() {
       const a = state.active;
-      const mins = Math.round((a.endAt - a.startedAt) / 60000);
+      const mins = Math.max(1, Math.round((a.endAt - (a.firstAt || a.startedAt)) / 60000));
       return `
         <div class="center">
           <p class="emoji">⏰</p>
@@ -443,7 +443,7 @@
   // ---------- 동작 ----------
   function startUrge(urge) {
     const now = Date.now();
-    state.active = { urge, startedAt: now, endAt: now + state.delayMin * 60000, rounds: 1, alt: null };
+    state.active = { urge, firstAt: now, startedAt: now, endAt: now + state.delayMin * 60000, rounds: 1, alt: null };
     save();
     go('timer');
   }
